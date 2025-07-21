@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  phone         String?
+  businessName  String?
+  businessType  String?   // "weaves", "electronics", "clothing", "loans", "services"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  customers     Customer[]
+  contracts     Contract[]
+  invoices      Invoice[]
+  orders        Order[]
+  
+  @@map("users")
+}
+
+model Customer {
+  id            String    @id @default(cuid())
+  name          String
+  email         String?
+  phone         String?
+  address       String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contracts     Contract[]
+  invoices      Invoice[]
+  orders        Order[]
+  
+  @@map("customers")
+}
+
+model Contract {
+  id                String    @id @default(cuid())
+  contractNumber    String    @unique
+  type              String    // "sale", "service", "loan"
+  customerName      String
+  productService    String
+  amount            Float
+  paymentTerms      Int       // days
+  deliveryDate      DateTime?
+  description       String?
+  status            String    @default("draft") // "draft", "sent", "signed", "completed"
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId        String
+  customer          Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  @@map("contracts")
+}
+
+model Invoice {
+  id                String    @id @default(cuid())
+  invoiceNumber     String    @unique
+  customerName      String
+  customerEmail     String?
+  customerPhone     String?
+  amount            Float
+  status            String    @default("draft") // "draft", "sent", "paid", "overdue"
+  dueDate           DateTime
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId        String
+  customer          Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items             InvoiceItem[]
+  
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id            String    @id @default(cuid())
+  description   String
+  quantity      Int       @default(1)
+  price         Float
+  total         Float     // quantity * price
+  
+  // Relations
+  invoiceId     String
+  invoice       Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  
+  @@map("invoice_items")
+}
+
+model Order {
+  id                String    @id @default(cuid())
+  orderNumber       String    @unique
+  customerName      String
+  customerPhone     String?
+  product           String
+  amount            Float
+  deliveryAddress   String
+  currentStatus     String    @default("pending") // "pending", "processing", "shipped", "out_for_delivery", "delivered", "cancelled"
+  estimatedDelivery DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId        String
+  customer          Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  statusHistory     OrderStatus[]
+  
+  @@map("orders")
+}
+
+model OrderStatus {
+  id            String    @id @default(cuid())
+  status        String    // "pending", "processing", "shipped", "out_for_delivery", "delivered", "cancelled"
+  note          String?
+  timestamp     DateTime  @default(now())
+  
+  // Relations
+  orderId       String
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@map("order_statuses")
+}
