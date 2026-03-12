@@ -1,14 +1,21 @@
-# SA Marketplace Platform - Implementation Documentation
+# SA Marketplace Platform - V1 Documentation
 
 ## Project Overview
 
-The SA Marketplace Platform is a comprehensive business management system designed specifically for young South African entrepreneurs to formalize their informal businesses. The platform serves as a professional backend infrastructure for sellers who currently advertise on social media platforms (Facebook, Instagram, TikTok, WhatsApp), helping them transition to professional business operations without competing with their existing advertising channels.
+SA Marketplace is a lean digital storefront and manual order management tool designed for young South African entrepreneurs who currently sell via social media (Instagram, TikTok, WhatsApp). The platform gives sellers a professional product listing page and a simple order tracker — nothing more. It does not process payments, generate contracts, provide financial services, act as a courier, or create tax invoices.
+
+## V1 Design Principles
+
+- **Legally safe**: No financial services, no contracts, no tax invoices, no escrow
+- **No integrations**: No payment gateways, no SMS/email APIs, no courier APIs
+- **Manual-first**: Order tracking and courier info are entered by the seller by hand
+- **Storefront only**: Buyers browse products and submit an order request; the seller handles everything else directly
 
 ## Target Users & Business Context
 
-- **Primary Users**: Young South African entrepreneurs selling weaves, iPhones, clothing, and providing loans
+- **Primary Users**: Young South African entrepreneurs selling clothing, sneakers, phones, and other goods
 - **Current State**: Users advertise on social media platforms
-- **Platform Goal**: Provide business infrastructure and professional storefront capabilities
+- **Platform Goal**: Provide a shareable product page and order inbox without replacing existing social media channels
 - **Currency**: All amounts in South African Rand (ZAR) format: "R 1,234.56"
 - **Compliance**: POPIA (Protection of Personal Information Act) considerations
 
@@ -22,17 +29,11 @@ The SA Marketplace Platform is a comprehensive business management system design
 ### Styling & UI
 - **Tailwind CSS** for responsive, mobile-first design
 - **Lucide React** for consistent iconography
-- **Custom SA-themed color palette** (blues, greens, golds)
 
 ### Data Management
-- **Prisma ORM** with SQLite (development) / PostgreSQL (production)
-- **localStorage-based shared store** for client-side data persistence
-- **Base64 encoding** for image storage
-
-### Authentication & Security
-- **NextAuth.js** for authentication
-- **Client-side hydration safety** for SSR compatibility
-- **Input validation** and secure data handling
+- **localStorage-based shared store** for client-side data persistence (`sa_marketplace_products`, `sa_marketplace_orders`)
+- **Base64 encoding** for image storage (up to 5 images per product)
+- **Prisma ORM** schema exists (SQLite dev / PostgreSQL prod) — not yet active; app still uses localStorage
 
 ### Notifications & UX
 - **React Hot Toast** for user feedback
@@ -44,75 +45,51 @@ The SA Marketplace Platform is a comprehensive business management system design
 ### 1. Platform Infrastructure ✅
 
 #### Landing Page (`src/app/page.tsx`)
-- Professional homepage with hero section
-- Feature highlights for business management tools
-- Call-to-action for getting started
-- Mobile-responsive design with SA branding
+- Hero section: "Sell online. Manage orders professionally."
+- Three-step explainer: Create your store → Share your link → Manage your orders
+- Legal disclaimer: platform provides storefront and order tools only; no payments, financial services, courier, or legally binding contracts
+- Links to register/login
 
-#### Authentication System
-- Secure login/signup functionality
-- Session management with NextAuth.js
-- Protected routes for dashboard access
+#### Authentication System (`src/app/login/`, `src/app/register/`)
+- Login and registration pages
+- Session management
 
 ### 2. Business Dashboard ✅
 
 #### Main Dashboard (`src/app/dashboard/page.tsx`)
-- Revenue analytics and key metrics
-- Quick action buttons for common tasks
-- Recent orders overview
-- Mobile-optimized navigation
+- **Stats**: Total Products, Total Orders, Revenue (paid orders only)
+- **Quick Actions**: Add Product, View Orders
+- **Recent Orders**: Last 5 orders with status badges, loaded from localStorage
 
-#### Navigation Structure
-- Sidebar navigation with business tools
-- Responsive mobile menu
-- Clear section organization
+#### Navigation (`src/app/dashboard/layout.tsx`)
+- Sidebar with four items: **Dashboard**, **Business Profile**, **Products**, **Orders**
+- Responsive: collapsible sidebar on mobile
 
-### 3. Order Management System ✅
+### 3. Order Management ✅
 
-#### Orders Dashboard (`src/app/dashboard/orders/page.tsx`)
-- **Order Stats**: Real-time counts for different order statuses
-- **Order Filtering**: Tabs for All, New, Confirmed, Shipped, Delivered orders
-- **Order Status Management**: 
-  - New → Confirmed → Shipped → Delivered workflow
-  - Cancel orders functionality
-  - Payment status tracking (Pending, Paid, Failed)
+#### Orders Page (`src/app/dashboard/orders/page.tsx`)
+- **Add Order manually**: customer name, phone, product, size, price, delivery address, notes
+- **Order list** with status filter tabs: All / Pending / Confirmed / Shipped / Delivered
+- **Status workflow**: Pending → Confirmed → Shipped → Delivered (+ Cancel)
+- **Payment toggle**: Mark as Paid / Unpaid
+- **Manual courier & tracking fields**: free-text `courierName` and `trackingNumber` inputs per order — seller fills these in after arranging delivery themselves
+- **Receipt link**: opens the printable receipt page in a new tab
 
-#### Order Features
-- **Customer Information**: Name, phone, email display
-- **Product Details**: Item, size, quantity, pricing
-- **Delivery Management**: PAXI, Courier, Collection options
-- **Payment Tracking**: SnapScan, EFT, Cash integration
-- **Order Notes**: Customer special requests
-- **Source Tracking**: Instagram, TikTok, WhatsApp origin
+#### Receipt Page (`src/app/dashboard/orders/receipt/[id]/page.tsx`)
+- Printable page labelled **"SALES RECEIPT — NOT A TAX INVOICE"**
+- Shows: business name, receipt number, date, customer name & phone, product, size, total, paid/unpaid status, courier info (if set)
+- Footer disclaimer: not a tax invoice, not a legally binding contract
+- Print button (hidden when printing via CSS)
 
-#### Order Actions
-- Confirm/Cancel new orders
-- Generate invoices
-- Send SMS notifications
-- Update order status
-- Mark payments as received
-- Real-time status updates with toast notifications
+### 4. Product Management ✅
 
-### 4. Product Management System ✅
-
-#### Products Dashboard (`src/app/dashboard/products/page.tsx`)
-- **Product CRUD Operations**: Create, Read, Update, Delete products
-- **Multi-Image Upload**: Up to 5 images per product with base64 storage
-- **Image Gallery**: Full-screen modal with navigation controls
-- **Product Categories**: Organized product classification
-- **Size Management**: Multiple size options per product
-- **Stock Tracking**: Quantity and availability management
-
-#### Image Management Features
-- **Upload Interface**: Drag-and-drop or click to upload
-- **Image Preview**: Thumbnail previews during upload
-- **Image Gallery Modal**:
-  - Full-screen viewing
-  - Navigation arrows (previous/next)
-  - Thumbnail strip at bottom
-  - Image counter display
-  - Close controls
-  - Keyboard-friendly navigation
+#### Products Page (`src/app/dashboard/products/page.tsx`)
+- **Full CRUD**: add, edit, delete products
+- **Multi-image upload**: up to 5 images per product, stored as base64
+- **Image gallery modal**: full-screen viewing, prev/next navigation, thumbnail strip, image counter
+- **Product fields**: name, description, price, original price (sale), category, sizes, stock quantity, tags, visibility toggle
+- **Filter tabs**: All / Visible / Hidden / In Stock / Out of Stock
+- **Storefront preview link**
 
 #### Product Data Structure
 ```typescript
@@ -121,215 +98,183 @@ interface Product {
   name: string
   description: string
   price: number
+  originalPrice?: number
   category: string
   sizes: string[]
+  colors: string[]
   inStock: boolean
-  images: string[] // Base64 encoded images
+  stockQuantity: number
+  images: string[]   // Base64 encoded, max 5
+  isVisible: boolean
+  tags: string[]
 }
 ```
 
-### 5. Public Business Profiles ✅
+### 5. Business Profile ✅
 
-#### Business Storefront (`src/app/business/[username]/page.tsx`)
-- **Public Product Catalog**: Customer-facing product display
-- **Professional Business Profile**: Seller information and branding
-- **Product Gallery**: Same gallery functionality as dashboard
-- **Mobile-Optimized**: Touch-friendly browsing experience
-- **Social Media Integration**: Links to seller's social platforms
+#### Profile Dashboard (`src/app/dashboard/business-profile/page.tsx`)
+- Shows business name and shareable profile URL
+- Incoming order list (orders with `pending` status)
+- Order status actions: Confirm / Cancel (pending) → Mark Shipped (confirmed)
+- Share Profile Link modal with example social media post copy
+- Link to view the public storefront
 
-#### Customer Experience
-- Browse products with professional presentation
-- View multiple product images via gallery
-- See pricing in South African Rand format
-- Access seller contact information
-- Mobile-first shopping experience
+### 6. Public Storefront ✅
 
-### 6. Shared Data Management ✅
+#### Business Page (`src/app/business/[username]/page.tsx`)
+- **Product catalog**: all visible, in-stock products with images, prices, sale prices, stock badges
+- **Image gallery modal**: same gallery as dashboard
+- **Order form modal**: customer fills in name, phone, delivery address, size (if applicable), notes — saved to localStorage orders
+- **WhatsApp contact button**: direct link to seller's WhatsApp
+- **Social media links**: Instagram and TikTok
+- **How to Order section**: three-step plain-language instructions
+- **Customer reviews**: static star ratings and comments (mock data in V1)
+- No verified badges, no escrow language, no specific payment method or courier brand mentions
+
+### 7. Shared Data Store ✅
 
 #### Products Store (`src/utils/productsStore.ts`)
 ```typescript
-// Core functions implemented:
-- getProducts(): Product[]
-- addProduct(product: Product): void
-- updateProduct(product: Product): void
-- deleteProduct(id: string): void
-- getSellerProducts(sellerId: string): Product[]
+getProducts(): Product[]
+addProduct(data): void
+updateProduct(id, data): void
+deleteProduct(id): void
+getSellerProducts(username): Product[]   // filters visible products only
 ```
 
-#### Data Persistence
-- localStorage-based storage for client-side persistence
-- JSON serialization for complex data structures
-- Automatic data synchronization across components
-
-### 7. User Experience Features ✅
-
-#### Mobile-First Design
-- Responsive breakpoints for all screen sizes
-- Touch-optimized interfaces
-- Mobile navigation patterns
-- Optimized for South African mobile networks
-
-#### Visual Feedback Systems
-- Toast notifications for all user actions
-- Loading states and transitions
-- Error handling with user-friendly messages
-- Success confirmations for critical actions
-
-#### Image Gallery System
-- **Clickable Product Images**: Hover effects with click to expand
-- **Full-Screen Modal**: Immersive viewing experience
-- **Navigation Controls**: 
-  - Left/Right arrow buttons
-  - Thumbnail strip for quick navigation
-  - Image counter (e.g., "2 of 5")
-  - Close button (X)
-- **Responsive Design**: Works on desktop and mobile
-- **Keyboard Support**: Arrow keys for navigation, Escape to close
+#### Orders Store
+- Key: `sa_marketplace_orders` in localStorage
+- Shared between the public storefront (write) and the seller dashboard (read/write)
 
 ## Data Flow Architecture
 
 ### Product Management Flow
-1. **Seller uploads product** → Dashboard Products page
-2. **Images processed** → Base64 encoding and storage
-3. **Product data saved** → localStorage shared store
-4. **Public display** → Business profile page renders products
-5. **Customer interaction** → Gallery viewing and browsing
+1. Seller adds product with images → Dashboard Products page
+2. Images converted to base64 → stored in localStorage
+3. Product saved to `sa_marketplace_products` key
+4. Public storefront reads visible products for the seller's username
 
-### Order Management Flow
-1. **Customer places order** → Through business profile or external channels
-2. **Order appears** → Dashboard orders list
-3. **Seller processes** → Confirm, generate invoice, update status
-4. **Status tracking** → Real-time updates and notifications
-5. **Completion** → Delivered status and payment confirmation
+### Order Flow
+1. Customer visits `/business/[username]`, browses products, submits order form
+2. Order written to `sa_marketplace_orders` in localStorage (status: `pending`)
+3. Seller opens Orders dashboard, sees the new order
+4. Seller updates status manually: Confirm → Shipped → Delivered
+5. Seller manually enters courier name and tracking number
+6. Seller marks order as paid when payment is received
+7. Seller prints a receipt from the receipt page
 
-## Code Organization
+## Code Organisation
 
 ### App Router Structure
 ```
 src/app/
-├── page.tsx                    # Landing page
+├── page.tsx                              # Landing page
+├── layout.tsx                            # Root layout (font, Toaster)
+├── login/page.tsx                        # Login
+├── register/page.tsx                     # Registration
 ├── dashboard/
-│   ├── page.tsx               # Main dashboard
-│   ├── orders/page.tsx        # Order management
-│   └── products/page.tsx      # Product management
+│   ├── layout.tsx                        # Sidebar navigation
+│   ├── page.tsx                          # Dashboard overview
+│   ├── business-profile/page.tsx         # Profile & incoming orders
+│   ├── orders/
+│   │   ├── page.tsx                      # Order management
+│   │   └── receipt/[id]/page.tsx         # Printable receipt
+│   └── products/page.tsx                 # Product CRUD
 └── business/[username]/
-    └── page.tsx               # Public business profile
+    └── page.tsx                          # Public storefront
 ```
 
-### Utility Functions
+### Utilities
 ```
 src/utils/
-└── productsStore.ts           # Shared data management
+└── productsStore.ts    # localStorage CRUD for products
 ```
-
-### Component Patterns
-- **Client Components**: All interactive components use 'use client'
-- **TypeScript Interfaces**: Strongly typed data structures
-- **Responsive Design**: Mobile-first Tailwind classes
-- **State Management**: React hooks with localStorage persistence
 
 ## Key Implementation Patterns
 
 ### 1. Hydration-Safe Rendering
 ```typescript
-// Price formatting to avoid SSR/client mismatch
-const formatPrice = (price: number): string => {
-  return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-}
+// Price formatting — consistent on server and client
+const formatPrice = (price: number): string =>
+  price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+
+// isClient guard for localStorage reads
+const [isClient, setIsClient] = useState(false)
+useEffect(() => { setIsClient(true) }, [])
 ```
 
 ### 2. Image Gallery Modal Pattern
 ```typescript
-// Gallery state management
 const [showImageGallery, setShowImageGallery] = useState(false)
 const [galleryImages, setGalleryImages] = useState<string[]>([])
 const [currentImageIndex, setCurrentImageIndex] = useState(0)
-
-// Navigation functions
-const openImageGallery = (images: string[], startIndex: number = 0)
-const closeImageGallery = ()
-const nextImage = ()
-const previousImage = ()
 ```
+Used in both the dashboard products page and the public storefront.
 
-### 3. Shared Data Store Pattern
+### 3. Orders localStorage Pattern
 ```typescript
-// localStorage-based persistence
-const STORAGE_KEY = 'marketplace_products'
-
-export const getProducts = (): Product[] => {
-  if (typeof window === 'undefined') return []
-  // Safe client-side data access
-}
+const ORDERS_KEY = 'sa_marketplace_orders'
+const orders: Order[] = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]')
+localStorage.setItem(ORDERS_KEY, JSON.stringify(updated))
 ```
 
-## Current Status & Working Features
+## Current Status
 
-### ✅ Fully Implemented & Working
-- Landing page with professional design
-- User authentication and session management
-- Complete order management dashboard
-- Product management with CRUD operations
-- Multi-image upload and storage system
-- Full-screen image gallery with navigation
-- Public business profiles
+### ✅ Fully Working in V1
+- Landing page with legal disclaimer
+- User authentication (login / register)
+- Dashboard overview with live stats from localStorage
+- Product management — full CRUD, multi-image upload, gallery
+- Order management — manual entry, status workflow, courier info, paid toggle
+- Printable sales receipt (not a tax invoice)
+- Public business storefront — product catalog, order form, WhatsApp button, reviews
+- Business profile page — shareable link, incoming order review
 - Mobile-responsive design throughout
-- Toast notifications for user feedback
-- South African Rand currency formatting
-- Order status workflow management
-- Customer information management
-- Delivery and payment tracking
+- Toast notifications for all user actions
 
-### ⚠️ Partially Implemented
-- Payment gateway integrations (placeholder functions ready)
-- SMS notification services (placeholder functions ready)
-- Email invoice delivery (placeholder functions ready)
-- **Delivery tracking integration** (comprehensive plan documented)
-- **Real-time order notifications** (implementation ready)
-- **Buyer verification system** (comprehensive system designed)
+### ❌ Intentionally Not in V1
+These features were scoped out to keep the platform legally safe and simple:
 
-### 🔄 Infrastructure Ready For
-- Database migration from localStorage to Prisma/PostgreSQL
-- Payment processor integration (SnapScan, EFT, etc.)
-- SMS service integration
-- Email service integration
-- Social media API integrations for customer import
-- **Courier API integrations** (PAXI, RAM, PostNet, Courier Guy)
-- **Real-time delivery tracking** with webhook notifications
-- **Customer tracking portal** for order visibility
-- **Multi-channel notification system** (SMS, Email, WhatsApp, Push)
-- **Buyer verification & safety features** (ID verification, reputation scoring)
-- **Escrow service integration** for secure high-value transactions
+| Feature | Reason removed |
+|---|---|
+| Contracts & invoices | Legal liability — not a registered legal/tax service |
+| SMS / email notifications | Requires third-party API integration and regulatory considerations |
+| Payment gateway integration | Requires FSP licence and SARB compliance |
+| Courier API integration (PAXI, RAM, etc.) | Out of scope — seller arranges delivery manually |
+| Buyer verification / ID checks | POPIA / FICA compliance complexity |
+| Escrow service | Requires financial services licence |
+| Analytics dashboard | Not needed for V1 |
+| Customer CRM | Not needed for V1 |
+| Social media customer import | Not needed for V1 |
+
+### 🔮 Possible V2 Additions (when compliance is in place)
+- Real database (Prisma + PostgreSQL migration)
+- Authenticated sessions with NextAuth.js
+- SMS order confirmations (seller-to-customer via WhatsApp Business API)
+- Real product reviews submitted by verified buyers
+- Per-seller business profile stored in database
+- Basic analytics (order counts, revenue chart)
 
 ## Technical Achievements
 
-1. **Complete Image Management Workflow**: From upload to gallery viewing
-2. **Professional Order Processing**: Full business workflow from new order to delivery
-3. **Mobile-First Experience**: Optimized for South African mobile users
-4. **Type-Safe Development**: Full TypeScript implementation
-5. **Responsive Design**: Works across all device sizes
-6. **Data Persistence**: Reliable client-side storage with shared state
-7. **User Experience**: Intuitive interfaces with proper feedback
+1. **Complete Image Management Workflow**: Upload → base64 storage → gallery viewing
+2. **Manual Order Processing**: Full status workflow from pending to delivered, all entered by the seller
+3. **Printable Sales Receipt**: Clean receipt page with clear "Not a Tax Invoice" labelling
+4. **Mobile-First Experience**: Optimized for South African mobile users
+5. **Type-Safe Development**: Full TypeScript implementation
+6. **Hydration-Safe Rendering**: No SSR/client mismatch on price formatting or localStorage reads
+7. **Legally Scoped**: No features that require financial, legal, or courier service licences
 
-## Next Steps for Production
+## Next Steps for V2
 
-1. **Payment Integration**: Connect real payment processors
-2. **SMS Services**: Integrate with South African SMS providers
-3. **Database Migration**: Move from localStorage to production database
-4. **Email Services**: Set up invoice and notification emails
-5. **Social Media APIs**: Enable customer import from social platforms
-6. **Performance Optimization**: Image compression and lazy loading
-7. **SEO Optimization**: Meta tags and search engine optimization
-8. **Security Hardening**: Production security measures
-9. **Delivery Tracking Integration**: Implement PAXI, RAM, PostNet, and Courier Guy APIs
-10. **Real-Time Notifications**: Webhook-based delivery status updates
-11. **Order Notification System**: Real-time alerts for sellers via SMS/Email/Push
-12. **Buyer Verification System**: ID verification, social media validation, reputation scoring
-13. **Escrow Service**: Secure payment holding for high-value transactions
-14. **Safe Meeting Points**: Integration with verified public locations for collections
+1. **Database migration**: Move from localStorage to Prisma + PostgreSQL
+2. **Real auth**: NextAuth.js session-based authentication
+3. **Per-seller profiles**: Store business name, WhatsApp, social links in database
+4. **Real reviews**: Buyers submit reviews after confirmed delivery
+5. **Basic analytics**: Revenue and order charts
+6. **SEO**: Dynamic metadata per business profile page
+7. **Performance**: Image compression before base64 storage
 
-## Summary
+## Legal Disclaimer
 
-The SA Marketplace Platform successfully provides a comprehensive business management solution for South African informal sellers. The platform bridges the gap between social media advertising and professional business operations, offering tools for order management, product catalog management, customer interaction, and business professionalism. The mobile-first design and South African localization make it perfectly suited for the target market of young entrepreneurs transitioning from informal to formal business operations.
-
-The current implementation provides a solid foundation with all core business workflows functional and ready for real-world use. The modular architecture and TypeScript foundation make it well-prepared for scaling and adding production-level integrations.
+> SA Marketplace provides digital storefront and order management tools only. It does not process payments, provide financial services, act as a courier, or generate legally binding contracts or tax invoices. All transactions and arrangements are made directly between buyers and sellers.
