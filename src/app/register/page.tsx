@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { EyeIcon, EyeOffIcon, CheckIcon } from 'lucide-react'
+import { EyeIcon, EyeOffIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
@@ -25,47 +25,59 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Basic validation
+
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
       toast.error('Please fill in all required fields')
       return
     }
-    
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match!')
       return
     }
-    
     if (formData.password.length < 6) {
       toast.error('Password must be at least 6 characters long')
       return
     }
-    
     if (!formData.agreeToTerms) {
       toast.error('Please agree to the Terms of Service and Privacy Policy')
       return
     }
-    
+
     setIsLoading(true)
-    toast.loading('Creating your account...', { id: 'register' })
-    
-    // Simulate registration delay
-    setTimeout(() => {
-      console.log('Registration attempt:', formData)
-      toast.success(`Welcome ${formData.firstName}! Your account has been created. Redirecting to dashboard...`, { id: 'register' })
-      // For demo purposes, redirect to dashboard after registration
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1500)
-    }, 1500)
+    toast.loading('Creating your account…', { id: 'register' })
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          businessName: formData.businessName,
+          businessType: formData.businessType,
+          password: formData.password,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? 'Registration failed', { id: 'register' })
+        setIsLoading(false)
+        return
+      }
+      toast.success(`Welcome, ${formData.firstName}! Please sign in.`, { id: 'register' })
+      router.push('/login')
+    } catch {
+      toast.error('Something went wrong. Please try again.', { id: 'register' })
+      setIsLoading(false)
+    }
   }
 
   const businessTypes = [
     'Clothing & Fashion',
     'Electronics & Phones',
     'Hair & Beauty',
-    'Loan Services',
     'Food & Catering',
     'Home & Garden',
     'Other'
@@ -282,25 +294,7 @@ export default function RegisterPage() {
             </button>
           </div>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 text-gray-500">Demo Access</span>
-              </div>
-            </div>
 
-            <div className="mt-6">
-              <Link
-                href="/dashboard"
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-              >
-                Continue to Dashboard (Demo)
-              </Link>
-            </div>
-          </div>
         </form>
       </div>
     </div>

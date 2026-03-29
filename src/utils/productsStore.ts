@@ -69,34 +69,16 @@ const initialProducts: Product[] = [
   }
 ]
 
-const PRODUCTS_STORAGE_KEY = 'marketplace_products'
+// In-memory product store (transitional state before Prisma is active)
+let productStore: Product[] = [...initialProducts]
 
 // Product store functions
 export const getProducts = (): Product[] => {
-  if (typeof window === 'undefined') return initialProducts
-  
-  try {
-    const stored = localStorage.getItem(PRODUCTS_STORAGE_KEY)
-    if (stored) {
-      return JSON.parse(stored)
-    }
-  } catch (error) {
-    console.error('Error loading products from localStorage:', error)
-  }
-  
-  // Initialize with default products if none exist
-  setProducts(initialProducts)
-  return initialProducts
+  return productStore
 }
 
 export const setProducts = (products: Product[]): void => {
-  if (typeof window === 'undefined') return
-  
-  try {
-    localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products))
-  } catch (error) {
-    console.error('Error saving products to localStorage:', error)
-  }
+  productStore = products
 }
 
 export const addProduct = (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Product => {

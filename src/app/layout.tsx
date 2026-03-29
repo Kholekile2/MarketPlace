@@ -2,12 +2,14 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
+import Providers from '@/components/Providers'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'SA Marketplace - Business Tools for South African Entrepreneurs',
-  description: 'Helping young South African entrepreneurs formalize their businesses with contracts, invoices, and delivery tracking.',
+  title: 'SA Marketplace – Sell Online, Manage Orders',
+  description:
+    'Create your online storefront, share it on social media, and manage customer orders professionally.',
 }
 
 export default function RootLayout({
@@ -18,8 +20,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {children}
-        <Toaster position="top-right" />
+        <Providers>
+          {children}
+          <Toaster position="top-right" />
+        </Providers>
       </body>
     </html>
   )

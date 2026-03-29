@@ -1,240 +1,157 @@
 'use client'
 
-import { useState } from 'react'
-import { 
-  TrendingUpIcon, 
-  UsersIcon, 
-  CreditCardIcon, 
-  ShoppingBagIcon,
-  PlusIcon,
-  ArrowUpIcon,
-  ArrowDownIcon
-} from 'lucide-react'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { PackageIcon, ShoppingCartIcon, PlusIcon, ClipboardListIcon } from 'lucide-react'
 
-const stats = [
-  {
-    name: 'Total Revenue',
-    value: 'R 45,231',
-    change: '+12.5%',
-    changeType: 'increase',
-    icon: TrendingUpIcon,
-  },
-  {
-    name: 'Active Customers',
-    value: '127',
-    change: '+8.2%',
-    changeType: 'increase',
-    icon: UsersIcon,
-  },
-  {
-    name: 'Pending Invoices',
-    value: '23',
-    change: '-3.1%',
-    changeType: 'decrease',
-    icon: CreditCardIcon,
-  },
-  {
-    name: 'Orders This Month',
-    value: '89',
-    change: '+15.3%',
-    changeType: 'increase',
-    icon: ShoppingBagIcon,
-  },
-]
+const formatPrice = (price: number): string =>
+  price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
 
-const recentOrders = [
-  {
-    id: 'ORD-001',
-    customer: 'Nomsa Mthembu',
-    product: 'Brazilian Weave 22"',
-    amount: 'R 850',
-    status: 'Delivered',
-    date: '2025-01-18',
-  },
-  {
-    id: 'ORD-002',
-    customer: 'Thabo Mokoena',
-    product: 'iPhone 13 Case',
-    amount: 'R 320',
-    status: 'In Transit',
-    date: '2025-01-17',
-  },
-  {
-    id: 'ORD-003',
-    customer: 'Lerato Dlamini',
-    product: 'Designer Dress',
-    amount: 'R 1,200',
-    status: 'Processing',
-    date: '2025-01-16',
-  },
-  {
-    id: 'ORD-004',
-    customer: 'Mpho Radebe',
-    product: 'Personal Loan',
-    amount: 'R 5,000',
-    status: 'Approved',
-    date: '2025-01-15',
-  },
-]
+const statusColor: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  confirmed: 'bg-blue-100 text-blue-800',
+  shipped: 'bg-purple-100 text-purple-800',
+  delivered: 'bg-green-100 text-green-800',
+  cancelled: 'bg-red-100 text-red-800',
+}
 
-export default function Dashboard() {
+interface Order {
+  id: string
+  customerName: string
+  productName: string
+  price: number
+  status: string
+  paid: boolean
+}
+
+export default function DashboardPage() {
+  const [totalProducts, setTotalProducts] = useState<number | null>(null)
+  const [totalOrders, setTotalOrders] = useState<number | null>(null)
+  const [paidRevenue, setPaidRevenue] = useState<number | null>(null)
+  const [recentOrders, setRecentOrders] = useState<Order[]>([])
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/products').then((r) => r.json()),
+      fetch('/api/orders').then((r) => r.json()),
+    ]).then(([pd, od]) => {
+      const products: unknown[] = pd.products ?? []
+      const orders: Order[] = od.orders ?? []
+      setTotalProducts(products.length)
+      setTotalOrders(orders.length)
+      setPaidRevenue(orders.filter((o) => o.paid).reduce((s, o) => s + o.price, 0))
+      setRecentOrders(orders.slice(0, 5))
+    })
+  }, [])
+
   return (
-    <div className="py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Page header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Welcome back! Here's what's happening with your business today.
-          </p>
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">Dashboard</h1>
+        <p className="text-gray-600">Here&apos;s what&apos;s happening with your store.</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow-sm p-6 flex items-center">
+          <div className="p-3 bg-blue-100 rounded-lg">
+            <PackageIcon className="h-6 w-6 text-blue-600" />
+          </div>
+          <div className="ml-4">
+            <p className="text-sm font-medium text-gray-600">Total Products</p>
+            <p className="text-2xl font-bold text-gray-900">{totalProducts ?? '—'}</p>
+          </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          {stats.map((stat) => {
-            const Icon = stat.icon
-            return (
-              <div key={stat.name} className="card">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <Icon className="h-8 w-8 text-primary-600" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        {stat.name}
-                      </dt>
-                      <dd className="text-lg font-medium text-gray-900">
-                        {stat.value}
-                      </dd>
-                    </dl>
-                  </div>
+        <div className="bg-white rounded-lg shadow-sm p-6 flex items-center">
+          <div className="p-3 bg-purple-100 rounded-lg">
+            <ShoppingCartIcon className="h-6 w-6 text-purple-600" />
+          </div>
+          <div className="ml-4">
+            <p className="text-sm font-medium text-gray-600">Total Orders</p>
+            <p className="text-2xl font-bold text-gray-900">{totalOrders ?? '—'}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm p-6 flex items-center">
+          <div className="p-3 bg-green-100 rounded-lg">
+            <ClipboardListIcon className="h-6 w-6 text-green-600" />
+          </div>
+          <div className="ml-4">
+            <p className="text-sm font-medium text-gray-600">Revenue (Paid)</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {paidRevenue !== null ? `R ${formatPrice(paidRevenue)}` : '—'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <Link
+          href="/dashboard/products"
+          className="flex items-center p-5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <PlusIcon className="h-6 w-6 mr-3 flex-shrink-0" />
+          <div>
+            <p className="font-semibold">Add Product</p>
+            <p className="text-blue-100 text-sm">Add a new item to your storefront</p>
+          </div>
+        </Link>
+
+        <Link
+          href="/dashboard/orders"
+          className="flex items-center p-5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <ShoppingCartIcon className="h-6 w-6 mr-3 flex-shrink-0 text-gray-600" />
+          <div>
+            <p className="font-semibold text-gray-900">View Orders</p>
+            <p className="text-gray-500 text-sm">Manage and track customer orders</p>
+          </div>
+        </Link>
+      </div>
+
+      {/* Recent Orders */}
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
+          <Link href="/dashboard/orders" className="text-sm text-blue-600 hover:text-blue-800">
+            View all
+          </Link>
+        </div>
+
+        <div className="divide-y divide-gray-100">
+          {totalOrders === null ? (
+            <div className="px-6 py-8 text-center text-gray-500 text-sm">Loading\u2026</div>
+          ) : recentOrders.length === 0 ? (
+            <div className="px-6 py-10 text-center">
+              <ShoppingCartIcon className="mx-auto h-10 w-10 text-gray-300 mb-3" />
+              <p className="text-sm text-gray-500">
+                No orders yet. Share your storefront link to get started!
+              </p>
+            </div>
+          ) : (
+            recentOrders.map((order) => (
+              <div key={order.id} className="px-6 py-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{order.customerName}</p>
+                  <p className="text-xs text-gray-500">{order.productName}</p>
                 </div>
-                <div className="mt-4">
-                  <div className="flex items-center text-sm">
-                    {stat.changeType === 'increase' ? (
-                      <ArrowUpIcon className="h-4 w-4 text-green-500 mr-1" />
-                    ) : (
-                      <ArrowDownIcon className="h-4 w-4 text-red-500 mr-1" />
-                    )}
-                    <span
-                      className={
-                        stat.changeType === 'increase'
-                          ? 'text-green-600'
-                          : 'text-red-600'
-                      }
-                    >
-                      {stat.change}
-                    </span>
-                    <span className="text-gray-500 ml-1">from last month</span>
-                  </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-gray-900">
+                    R {formatPrice(order.price)}
+                  </p>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      statusColor[order.status] ?? 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {order.status}
+                  </span>
                 </div>
               </div>
-            )
-          })}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <button className="card hover:shadow-lg transition-shadow cursor-pointer text-center">
-              <PlusIcon className="h-8 w-8 text-primary-600 mx-auto mb-2" />
-              <h3 className="text-sm font-medium text-gray-900">Create Contract</h3>
-              <p className="text-xs text-gray-500 mt-1">Generate a new sales contract</p>
-            </button>
-            
-            <button className="card hover:shadow-lg transition-shadow cursor-pointer text-center">
-              <PlusIcon className="h-8 w-8 text-primary-600 mx-auto mb-2" />
-              <h3 className="text-sm font-medium text-gray-900">Send Invoice</h3>
-              <p className="text-xs text-gray-500 mt-1">Create and send an invoice</p>
-            </button>
-            
-            <button className="card hover:shadow-lg transition-shadow cursor-pointer text-center">
-              <PlusIcon className="h-8 w-8 text-primary-600 mx-auto mb-2" />
-              <h3 className="text-sm font-medium text-gray-900">Add Customer</h3>
-              <p className="text-xs text-gray-500 mt-1">Add a new customer</p>
-            </button>
-            
-            <button className="card hover:shadow-lg transition-shadow cursor-pointer text-center">
-              <PlusIcon className="h-8 w-8 text-primary-600 mx-auto mb-2" />
-              <h3 className="text-sm font-medium text-gray-900">Track Order</h3>
-              <p className="text-xs text-gray-500 mt-1">Update order status</p>
-            </button>
-          </div>
-        </div>
-
-        {/* Recent Orders */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-gray-900">Recent Orders</h2>
-            <button className="text-primary-600 hover:text-primary-700 text-sm font-medium">
-              View all
-            </button>
-          </div>
-          
-          <div className="overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Order
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Product
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {order.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.customer}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.product}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.amount}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          order.status === 'Delivered'
-                            ? 'bg-green-100 text-green-800'
-                            : order.status === 'In Transit'
-                            ? 'bg-blue-100 text-blue-800'
-                            : order.status === 'Processing'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-purple-100 text-purple-800'
-                        }`}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.date}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            ))
+          )}
         </div>
       </div>
     </div>
