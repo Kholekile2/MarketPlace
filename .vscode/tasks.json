@@ -10,6 +10,17 @@
 				"$tsc"
 			],
 			"type": "shell"
+		},
+		{
+			"label": "Kill stale node and clean next cache",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Stop-Process -Id 19952 -Force -ErrorAction SilentlyContinue; if (Test-Path .next) { Remove-Item -Recurse -Force .next }; Write-Output \"cleanup-done\""
+			],
+			"isBackground": false
 		}
 	]
 }
